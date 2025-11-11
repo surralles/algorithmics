@@ -1,4 +1,5 @@
 from flask import Flask, request
+import sys, json
 
 
 app = Flask(__name__)
@@ -27,7 +28,8 @@ def webhook():
     if request.method == "POST":
         # Mensajes entrantes desde WhatsApp
         data = request.get_json()
-        print(data)
+        print("📩 Webhook recibido:", json.dumps(data, indent=2), file=sys.stdout)
+        sys.stdout.flush()
         return "EVENT_RECEIVED", 200
 
 
