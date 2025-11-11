@@ -1,11 +1,11 @@
 from flask import Flask, request
-import sys, json
+import sys, json, sys, os
 
 
 app = Flask(__name__)
 
 
-VERIFY_TOKEN = "EAATMA90XnhUBPxFkQlWPgIQSHJkEoZBZAbrMArObKYP0Hn5a6w0PhliUCD1sJqOSbYIb4ujUIMysDh2NCb4Fzx5bjRusxBMFQDbtG6ZCBOzztIsxDzXpqqjqGzNufZCIv0AyznbSgjiSGgDIyRXogsYlKPHYygzi2xtZAitDXzFJbF3JTPs0UW55ZCYhv3FwjZB6pySROLVqRk9CJvKZBYaRRpfFzG1cZAWfqe71wqZBx3VIujlVaIZATbUpBdRjm5bZC2BiSXUvCgedg3cz9qBZCZAgZDZD"
+VERIFY_TOKEN = "autoclass2025"
 
 
 @app.route("/")
