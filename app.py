@@ -9,6 +9,11 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "autoclass2025")
 app = Flask(__name__)
 
 
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
+
+
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
     if request.method == "GET":
