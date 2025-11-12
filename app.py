@@ -1,11 +1,14 @@
 from flask import Flask, request
-import sys, json, sys, os
+import requests, json, sys, os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "autoclass2025")
 
 app = Flask(__name__)
-
-
-VERIFY_TOKEN = "autoclass2025"
 
 
 @app.route("/")
