@@ -1,141 +1,160 @@
+import os, json, sys, requests
 from flask import Flask, request
-import requests, json, sys, os
 from dotenv import load_dotenv
+from openai import OpenAI
+from utils.pdf_tools import extract_text_from_pdf
+import uuid  # Para generar nombres únicos de archivo
+from flask import url_for
+from image_generator import create_quiz_image
 
 load_dotenv()
 
-WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
-PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "autoclass2025")
+# --- CONFIGURACIÓN ---
+app = Flask(__name__)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Instagram Config
+IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
+IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
-
-app = Flask(__name__)
-
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+# Carpeta para las imágenes (Render la servirá por /static/generated/...)
+GENERATED_DIR = os.path.join("static", "generated")
+os.makedirs(GENERATED_DIR, exist_ok=True)
 
 
-def send_debug_to_discord(title: str, payload):
+def publish_to_instagram(image_url, caption):
     """
-    Envía payload (objeto Python o string) a Discord via webhook.
-    Si el payload es muy largo, lo envía como archivo adjunto (payload.json).
-    title: texto corto que describe el mensaje, p.ej. "Incoming webhook" o "WA response"
+    Publica una imagen en el feed de Instagram (Proceso de 2 pasos)
     """
-    if not DEBUG_DISCORD_WEBHOOK:
-        # no hay webhook configurado, nothing to do
-        return
+    # Paso 1: Crear el contenedor de la media
+    post_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media"
+    payload = {
+        "image_url": image_url,
+        "caption": caption,
+        "access_token": IG_ACCESS_TOKEN,
+    }
+    r = requests.post(post_url, data=payload)
+    res_data = r.json()
+    container_id = r.json().get("id")
 
-    try:
-        # Normalizar payload a cadena con indentado
-        if isinstance(payload, (dict, list)):
-            text = json.dumps(payload, indent=2, ensure_ascii=False)
-        else:
-            text = str(payload)
+    if not container_id:
+        return {"Error": "No se pudo crear el contenedor", "details": res_data}
 
-        # Discord tiene límite ~2000 chars en content; si es más, envia archivo
-        if len(text) <= 1800:
-            data = {"content": f"**{title}**\n```json\n{text}\n```"}
-            resp = requests.post(DEBUG_DISCORD_WEBHOOK, json=data, timeout=10)
-        else:
-            # enviar como archivo adjunto para no truncar
-            files = {"file": ("payload.json", text.encode("utf-8"), "application/json")}
-            # también mandar un pequeño mensaje con título
-            params = {
-                "payload_json": json.dumps(
-                    {"content": f"**{title}** — payload adjunto"}
-                )
-            }
-            resp = requests.post(
-                DEBUG_DISCORD_WEBHOOK, data=params, files=files, timeout=15
-            )
+    # Paso 2: Publicar el contenedor
+    publish_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media_publish"
+    r = requests.post(
+        publish_url, data={"creation_id": container_id, "access_token": IG_ACCESS_TOKEN}
+    )
+    return r.json()
 
-        # log local para saber si Discord aceptó
-        print(
-            "📥 Debug -> Discord response:",
-            resp.status_code,
-            resp.text,
-            file=sys.stdout,
-        )
-        sys.stdout.flush()
-    except Exception as e:
-        # no queremos que el fallo de logging interrumpa la app
-        print("⚠️ Error enviando debug a Discord:", e, file=sys.stdout)
-        sys.stdout.flush()
+
+# --- LÓGICA DE IA ---
+
+
+def generate_quiz_data(text):
+    """Genera la pregunta y la respuesta correcta usando GPT"""
+    prompt = f"Basado en este texto: {text}. Genera 1 pregunta de test con 3 opciones (A, B, C). Responde SOLO en JSON: {{'pregunta': '...', 'opciones': {{'A': '...', 'B': '...', 'C': '...'}}, 'correcta': 'A'}}"
+
+    response = client.chat.completions.create(
+        model="gpt-4o",  # O el que prefieras
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+# --- ENDPOINT PRINCIPAL ---
 
 
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
     if request.method == "GET":
-        # Verificación del webhook
-        # mode = request.args.get("hub.mode")
-        token = request.args.get("hub.verify_token")
-        challenge = request.args.get("hub.challenge")
-        if token == VERIFY_TOKEN:
-            print("✅ Webhook verificado correctamente", file=sys.stdout)
-            sys.stdout.flush()
-            return challenge, 200
-        return "Error de verificación", 403
+        # Verificación de Meta
+        if request.args.get("hub.verify_token") == VERIFY_TOKEN:
+            return request.args.get("hub.challenge"), 200
+        return "Error", 403
 
     if request.method == "POST":
-        # Recepción de mensajes
         data = request.get_json()
-        print("📩 Mensaje recibido:", json.dumps(data, indent=2), file=sys.stdout)
-        sys.stdout.flush()
 
-        # 2) enviar a Discord (compacto / archivo si muy grande)
-        send_debug_to_discord("Webhook recibido (Meta -> Render)", data)
-
+        # Lógica para detectar comentarios en Instagram
         try:
-            entry = data["entry"][0]["changes"][0]["value"]
-            if "messages" in entry:
-                phone_number_id = entry["metadata"]["phone_number_id"]
-                from_number = entry["messages"][0]["from"]
-                text = entry["messages"][0].get("text", {}).get("body", "")
+            for entry in data.get("entry", []):
+                for change in entry.get("changes", []):
+                    if change.get("field") == "comments":
+                        comment_data = change["value"]
+                        comment_text = comment_data.get("text", "").upper().strip()
+                        user_id = comment_data.get("from", {}).get("id")
+                        media_id = comment_data.get("media", {}).get("id")
 
-                print(f"ID del Número de WABA: {phone_number_id}", file=sys.stdout)
-
-                # 🟢 Enviar respuesta automática
-                send_whatsapp_message(
-                    from_number,
-                    "¡Hola! Tu mensaje fue recibido correctamente 👋",
-                    phone_number_id,
-                )
+                        # Aquí filtrarías si el comentario es "A", "B" o "C"
+                        # Y lo compararías con la respuesta correcta guardada en tu DB o Sheets
+                        process_answer(user_id, comment_text, media_id)
         except Exception as e:
-            print("⚠️ Error procesando mensaje:", e, file=sys.stdout)
-            sys.stdout.flush()
-            send_debug_to_discord(
-                "Error procesando webhook", {"error": str(e), "raw": data}
-            )
+            print(f"Error en webhook: {e}")
 
-        return "EVENT_RECEIVED", 200
+        return "OK", 200
 
 
-def send_whatsapp_message(to_number, text, waba_id):
-    """Envía un mensaje de texto a través de la API de WhatsApp"""
-    url = f"https://graph.facebook.com/v19.0/{waba_id}/messages"
-    headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to_number,
-        "type": "text",
-        "text": {"body": text},
-    }
+def process_answer(user_id, text, media_id):
+    """Aquí manejas el ranking y validación de la respuesta"""
+    if text in ["A", "B", "C"]:
+        print(f"Usuario {user_id} respondió {text} en el post {media_id}")
+        # 1. Buscar respuesta correcta del post en tu DB
+        # 2. Si es correcta, sumar puntos en Google Sheets
 
-    response = requests.post(url, headers=headers, json=payload)
+
+# --- ENDPOINT PRINCIPAL ---
+
+
+@app.route("/process_daily_pdf", methods=["POST"])
+def process_daily_pdf():
+    if "file" not in request.files:
+        return {"error": "Falta el archivo PDF"}, 400
+    # 1. Extraer PDF
+    file = request.files["file"]
+    temp_pdf = f"/tmp/{uuid.uuid4().hex}.pdf"
+    file.save("temp.pdf")
+
     try:
-        j = response.json()
-    except Exception:
-        j = {"status_code": response.status_code, "text": response.text}
-    print("📤 Respuesta enviada:", response.text, file=sys.stdout)
-    sys.stdout.flush()
-    send_debug_to_discord("WhatsApp API response", j)
-    return j
+        pdf_text = extract_text_from_pdf(temp_pdf)
+        # 2. Generar pregunta con GPT
+        quiz_data = generate_quiz_data(pdf_text)
+
+        # 3. Pillow genera la imagen en la carpeta static
+        img_filename = f"quiz_{uuid.uuid4().hex}.jpg"
+        local_img_path = os.path.join(GENERATED_DIR, img_filename)
+        create_quiz_image(quiz_data, local_img_path)
+
+        # 4. Construir URL PÚBLICA para Instagram
+        # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
+        base_url = os.getenv("RENDER_EXTERNAL_URL", "http://localhost:5000")
+        public_url = f"{base_url}/static/generated/{img_filename}"
+
+        print(f"🌍 URL enviada a Instagram: {public_url}")
+
+        # 5. Publicar en Instagram
+
+        caption = (
+            f"🧠 ¡Desafío de hoy!\n\n{quiz_data['pregunta']}\n\n👇 Comenta A, B o C."
+        )
+        result = publish_to_instagram(public_url, caption)
+
+        return {
+            "status": "Post publicado",
+            "image_url": public_url,
+            "instagram_response": result,
+        }, 200
+
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+    finally:
+        # Limpiar el PDF temporal
+        if os.path.exists(temp_pdf):
+            os.remove(temp_pdf)
 
 
 if __name__ == "__main__":
