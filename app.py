@@ -15,7 +15,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Instagram Config
 IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
-IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+IG_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
