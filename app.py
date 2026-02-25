@@ -15,7 +15,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Instagram Config
 IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
-IG_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
@@ -33,7 +33,7 @@ def publish_to_instagram(image_url, caption):
     payload = {
         "image_url": image_url,
         "caption": caption,
-        "access_token": IG_ACCESS_TOKEN,
+        "access_token": INSTAGRAM_ACCESS_TOKEN_,
     }
     r = requests.post(post_url, data=payload)
     res_data = r.json()
@@ -45,7 +45,8 @@ def publish_to_instagram(image_url, caption):
     # Paso 2: Publicar el contenedor
     publish_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media_publish"
     r = requests.post(
-        publish_url, data={"creation_id": container_id, "access_token": IG_ACCESS_TOKEN}
+        publish_url,
+        data={"creation_id": container_id, "access_token": INSTAGRAM_ACCESS_TOKEN_},
     )
     return r.json()
 
