@@ -12,13 +12,10 @@ load_dotenv()
 
 # --- CONFIGURACIÓN ---
 app = Flask(__name__)
-# Borramos temporalmente las variables de proxy que Render inyecta
-# y que confunden a la librería de OpenAI
-os.environ.pop("HTTP_PROXY", None)
-os.environ.pop("HTTPS_PROXY", None)
-os.environ.pop("http_proxy", None)
-os.environ.pop("https_proxy", None)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Al poner http_client=None o simplemente inicializarlo limpio,
+# evitamos que intente usar los proxies automáticos de Render.
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), http_client=None)
 
 # Instagram Config
 IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
