@@ -7,17 +7,17 @@ import uuid  # Para generar nombres únicos de archivo
 from flask import url_for
 from image_generator import create_quiz_image
 
+
+load_dotenv()
+
+# --- CONFIGURACIÓN ---
+app = Flask(__name__)
 # Borramos temporalmente las variables de proxy que Render inyecta
 # y que confunden a la librería de OpenAI
 os.environ.pop("HTTP_PROXY", None)
 os.environ.pop("HTTPS_PROXY", None)
 os.environ.pop("http_proxy", None)
 os.environ.pop("https_proxy", None)
-
-load_dotenv()
-
-# --- CONFIGURACIÓN ---
-app = Flask(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Instagram Config
