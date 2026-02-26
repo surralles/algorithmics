@@ -76,6 +76,11 @@ def generate_quiz_data(text):
     return json.loads(response.choices[0].message.content)
 
 
+@app.route("/")
+def hello_world():
+    return "<h1>Servidor Algorithmics Activo</h1><p>El bot está esperando PDFs...</p>"
+
+
 # --- ENDPOINT PRINCIPAL ---
 
 
