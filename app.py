@@ -2,6 +2,7 @@ import os, json, sys, requests
 from flask import Flask, request
 from dotenv import load_dotenv
 from openai import OpenAI
+import httpx
 from utils.pdf_tools import extract_text_from_pdf
 import uuid  # Para generar nombres únicos de archivo
 from flask import url_for
@@ -12,10 +13,15 @@ load_dotenv()
 
 # --- CONFIGURACIÓN ---
 app = Flask(__name__)
-# Al poner http_client=None o simplemente inicializarlo limpio,
-# evitamos que intente usar los proxies automáticos de Render.
+# 1. Limpieza absoluta de variables de entorno de red
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY"]:
+    os.environ.pop(var, None)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), http_client=None)
+# 2. Creamos un cliente HTTP manual vacío de proxies
+http_client = httpx.Client(proxies=None)
+
+# 3. Se lo pasamos a OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), http_client=http_client)
 
 # Instagram Config
 IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
