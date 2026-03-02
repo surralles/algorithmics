@@ -6,6 +6,7 @@ import httpx
 from utils.pdf_tools import extract_text_from_pdf
 import uuid  # Para generar nombres únicos de archivo
 from flask import url_for
+from flask import request
 from image_generator import create_quiz_image
 
 
@@ -131,13 +132,18 @@ def process_daily_pdf():
         return {"error": "Falta el archivo PDF"}, 400
     # 1. Extraer PDF
     file = request.files["file"]
-    temp_pdf = f"/tmp/{uuid.uuid4().hex}.pdf"
-    file.save("temp.pdf")
+
+    # Creamos un nombre único y una ruta segura en /tmp
+    filename = f"{uuid.uuid4().hex}.pdf"
+    filepath = os.path.join("/tmp", filename)
+
+    # ¡ESTO ES LO IMPORTANTE!: Guardar el archivo físicamente
+    file.save(filepath)
 
     try:
-        pdf_text = extract_text_from_pdf(temp_pdf)
+        text = extract_text_from_pdf(filepath)
         # 2. Generar pregunta con GPT
-        quiz_data = generate_quiz_data(pdf_text)
+        quiz_data = generate_quiz_data(text)
 
         # 3. Pillow genera la imagen en la carpeta static
         img_filename = f"quiz_{uuid.uuid4().hex}.jpg"
@@ -168,9 +174,10 @@ def process_daily_pdf():
         return {"error": str(e)}, 500
 
     finally:
-        # Limpiar el PDF temporal
-        if os.path.exists(temp_pdf):
-            os.remove(temp_pdf)
+        # Limpiar el PDF temporalç
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
 
 if __name__ == "__main__":
