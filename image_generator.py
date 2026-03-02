@@ -110,7 +110,7 @@ def create_quiz_image(quiz_data, output_path):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         final_path = output_path
 
-    base_image = base_image.convert("RGB").save(output_path, quality=95)
+    base_image.convert("RGB").save(final_path, "JPEG", quality=85, optimize=True)
 
     print(f"🖼️ Imagen generada: {output_path}")
     return output_path
