@@ -34,7 +34,7 @@ def draw_multiline_text(draw, text, position, font, max_width, color):
     return y  # Devuelve la nueva posición Y
 
 
-def create_quiz_image(quiz_data, output_filename):
+def create_quiz_image(quiz_data, output_path):
     """
     Recibe los datos del quiz (JSON de GPT) y genera una imagen cuadrada.
     Devuelve la ruta local del archivo generado.
@@ -47,7 +47,7 @@ def create_quiz_image(quiz_data, output_filename):
         overlay = Image.new("RGBA", IMG_SIZE, (0, 0, 0, 100))
         base_image = Image.alpha_composite(base_image.convert("RGBA"), overlay)
     except Exception as e:
-        print(f"⚠️ No se encontró fondo en {BG_IMAGE_PATH}, usando color sólido. {e}")
+        print(f"⚠️ Usando color sólido: {e}")
         base_image = Image.new("RGB", IMG_SIZE, color=(50, 50, 100))
 
     draw = ImageDraw.Draw(base_image)
@@ -102,8 +102,14 @@ def create_quiz_image(quiz_data, output_filename):
         current_y += 30  # Espacio extra entre opciones
 
     # 4. Guardar imagen
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    output_path = os.path.join(OUTPUT_DIR, output_filename)
+    if not os.path.dirname(output_path):
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        final_path = os.path.join(OUTPUT_DIR, output_path)
+    else:
+        # Si ya trae carpeta, nos aseguramos de que esa carpeta exista
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        final_path = output_path
+
     base_image = base_image.convert("RGB").save(output_path, quality=95)
 
     print(f"🖼️ Imagen generada: {output_path}")
