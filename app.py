@@ -14,6 +14,8 @@ load_dotenv()
 
 # --- CONFIGURACIÓN ---
 app = Flask(__name__)
+# Esto fuerza a Flask a entender que 'static' es una carpeta de archivos accesibles
+app = Flask(__name__, static_folder="static")
 # 1. Limpieza absoluta de variables de entorno de red
 for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY"]:
     os.environ.pop(var, None)
@@ -31,6 +33,7 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
 # Carpeta para las imágenes (Render la servirá por /static/generated/...)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 GENERATED_DIR = os.path.join("static", "generated")
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
@@ -174,8 +177,6 @@ def process_daily_pdf():
         return {"error": str(e)}, 500
 
     finally:
-        # Limpiar el PDF temporalç
-
         if os.path.exists(filepath):
             os.remove(filepath)
 
