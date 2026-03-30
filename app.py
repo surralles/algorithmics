@@ -37,7 +37,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 GENERATED_DIR = os.path.join("static", "generated")
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
-
+@app.route('/publish_to_instagram', methods=['POST'])
 def publish_to_instagram(image_url, caption):
     """
     Publica una imagen en el feed de Instagram (Proceso de 2 pasos)
