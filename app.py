@@ -6,7 +6,7 @@ import httpx
 from utils.pdf_tools import extract_text_from_pdf
 import uuid  # Para generar nombres únicos de archivo
 from flask import url_for
-from flask import request
+from flask import request, jsonify
 from image_generator import create_quiz_image
 
 
@@ -37,8 +37,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 GENERATED_DIR = os.path.join("static", "generated")
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
-@app.route('/publish_to_instagram', methods=['POST'])
-def publish_to_instagram(image_url, caption):
+# 1. Esta es la función lógica
+def logic_publish_to_instagram(image_url, caption):
     """
     Publica una imagen en el feed de Instagram (Proceso de 2 pasos)
     """
@@ -51,7 +51,7 @@ def publish_to_instagram(image_url, caption):
     }
     r = requests.post(post_url, data=payload)
     res_data = r.json()
-    container_id = r.json().get("id")
+    container_id = res_data.get("id")
 
     if not container_id:
         return {"Error": "No se pudo crear el contenedor", "details": res_data}
@@ -63,6 +63,23 @@ def publish_to_instagram(image_url, caption):
         data={"creation_id": container_id, "access_token": INSTAGRAM_ACCESS_TOKEN_},
     )
     return r.json()
+
+# 2. Esta es la RUTA (el endpoint que recibe el curl)
+@app.route('/publish_to_instagram', methods=['POST'])
+def route_handler():
+    # Extraemos los datos del JSON que envías en el curl
+    data = request.get_json()
+    
+    if not data or 'image_url' not in data:
+        return jsonify({"error": "Falta image_url en el JSON"}), 400
+        
+    img = data.get('image_url')
+    txt = data.get('caption', 'Post automático')
+
+    # Llamamos a la función lógica con los datos extraídos
+    resultado = logic_publish_to_instagram(img, txt)
+    
+    return jsonify(resultado)
 
 
 # --- LÓGICA DE IA ---
