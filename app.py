@@ -39,22 +39,30 @@ os.makedirs(GENERATED_DIR, exist_ok=True)
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
-    """
-    Publica una imagen en el feed de Instagram (Proceso de 2 pasos)
-    """
-    # Paso 1: Crear el contenedor de la media
-    post_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media"
+    # .strip() elimina espacios invisibles al principio y al final
+    # .replace() elimina saltos de línea ocultos
+    clean_id = str(os.getenv("INSTAGRAM_BUSINESS_ID", "")).strip().replace("\n", "").replace("\r", "")
+    clean_token = str(os.getenv("INSTAGRAM_ACCESS_TOKEN", "")).strip().replace("\n", "").replace("\r", "")
+
+    print(f"DEBUG: Intentando publicar en ID: '{clean_id}'") # Esto saldrá en los logs de Render
+
+    # Paso 1: Crear el contenedor
+    post_url = f"https://graph.facebook.com/v19.0/{clean_id}/media"
     payload = {
         "image_url": image_url,
         "caption": caption,
-        "access_token": INSTAGRAM_ACCESS_TOKEN_,
+        "access_token": clean_token,
     }
+    
     r = requests.post(post_url, data=payload)
     res_data = r.json()
-    container_id = res_data.get("id")
+    
+    # Si falla aquí, el log de Render nos dirá EXACTAMENTE qué respondió Meta
+    if "error" in res_data:
+        print(f"❌ Error de Meta: {res_data['error']['message']}")
+        return res_data
 
-    if not container_id:
-        return {"Error": "No se pudo crear el contenedor", "details": res_data}
+    container_id = res_data.get("id")
 
     # Paso 2: Publicar el contenedor
     publish_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media_publish"
