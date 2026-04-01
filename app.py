@@ -48,13 +48,16 @@ def logic_publish_to_instagram(image_url, caption):
     print(f"URL: https://graph.facebook.com/v19.0/{clean_id}/media")
     print(f"Token (primeros 10): {clean_token[:10]}...")
     
+    post_url = f"https://graph.facebook.com/v19.0/{clean_id}/media"
+    
     payload = {
         "image_url": image_url,
         "caption": caption,
         "access_token": clean_token,
+        "media_type": "IMAGE"  # <-- AÑADE ESTA LÍNEA para forzar el tipo
     }
     
-    r = requests.post(f"https://graph.facebook.com/v19.0/{clean_id}/media", data=payload)
+    r = requests.post(post_url, data=payload)
     res_data = r.json()
     
     print(f"RESPONSE FROM META: {res_data}")
