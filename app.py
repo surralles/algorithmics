@@ -27,8 +27,8 @@ http_client = httpx.Client(proxies=None)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), http_client=http_client)
 
 # Instagram Config
-IG_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
-INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+INSTAGRAM_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
+INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN_")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
@@ -39,23 +39,26 @@ os.makedirs(GENERATED_DIR, exist_ok=True)
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
-    # .strip() elimina espacios invisibles al principio y al final
-    # .replace() elimina saltos de línea ocultos
-    clean_id = str(os.getenv("INSTAGRAM_BUSINESS_ID", "")).strip().replace("\n", "").replace("\r", "")
-    clean_token = str(os.getenv("INSTAGRAM_ACCESS_TOKEN", "")).strip().replace("\n", "").replace("\r", "")
-
-    print(f"DEBUG: Intentando publicar en ID: '{clean_id}'") # Esto saldrá en los logs de Render
-
-    # Paso 1: Crear el contenedor
-    post_url = f"https://graph.facebook.com/v19.0/{clean_id}/media"
+   # Forzamos limpieza absoluta
+    clean_id = str(os.getenv("INSTAGRAM_BUSINESS_ID", "")).strip()
+    clean_token = str(os.getenv("INSTAGRAM_ACCESS_TOKEN_", "")).strip()
+    
+    # IMPORTANTE: Mira esto en los logs de Render después de lanzar el curl
+    print(f"--- DEBUG START ---")
+    print(f"URL: https://graph.facebook.com/v19.0/{clean_id}/media")
+    print(f"Token (primeros 10): {clean_token[:10]}...")
+    
     payload = {
         "image_url": image_url,
         "caption": caption,
         "access_token": clean_token,
     }
     
-    r = requests.post(post_url, data=payload)
+    r = requests.post(f"https://graph.facebook.com/v19.0/{clean_id}/media", data=payload)
     res_data = r.json()
+    
+    print(f"RESPONSE FROM META: {res_data}")
+    print(f"--- DEBUG END ---")
     
     # Si falla aquí, el log de Render nos dirá EXACTAMENTE qué respondió Meta
     if "error" in res_data:
@@ -65,7 +68,7 @@ def logic_publish_to_instagram(image_url, caption):
     container_id = res_data.get("id")
 
     # Paso 2: Publicar el contenedor
-    publish_url = f"https://graph.facebook.com/v19.0/{IG_BUSINESS_ID}/media_publish"
+    publish_url = f"https://graph.facebook.com/v19.0/{INSTAGRAM_BUSINESS_ID}/media_publish"
     r = requests.post(
         publish_url,
         data={"creation_id": container_id, "access_token": INSTAGRAM_ACCESS_TOKEN_},
