@@ -180,13 +180,15 @@ def process_daily_pdf():
         quiz_data = generate_quiz_data(text)
 
         # 3. Pillow genera la imagen en la carpeta static
-        img_filename = f"quiz_{uuid.uuid4().hex}.jpg"
+        img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
+        GENERATED_DIR = "static"
+        os.makedirs(GENERATED_DIR, exist_ok=True)
         local_img_path = os.path.join(GENERATED_DIR, img_filename)
         create_quiz_image(quiz_data, local_img_path)
 
         # 4. Construir URL PÚBLICA para Instagram
         # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
-        base_url = os.getenv("RENDER_EXTERNAL_URL", "http://localhost:5000")
+        base_url = os.getenv("RENDER_EXTERNAL_URL")
         public_url = f"{base_url}/static/generated/{img_filename}"
 
         print(f"🌍 URL enviada a Instagram: {public_url}")
@@ -196,20 +198,14 @@ def process_daily_pdf():
         caption = (
             f"🧠 ¡Desafío de hoy!\n\n{quiz_data['pregunta']}\n\n👇 Comenta A, B o C."
         )
-        result = publish_to_instagram(public_url, caption)
+        result = logic_publish_to_instagram(public_url, caption)
 
-        return {
-            "status": "Post publicado",
-            "image_url": public_url,
-            "instagram_response": result,
-        }, 200
+        return result
 
     except Exception as e:
         return {"error": str(e)}, 500
 
-    finally:
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    
 
 
 if __name__ == "__main__":
