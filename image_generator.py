@@ -102,23 +102,26 @@ def create_quiz_image(quiz_data, output_path):
         current_y += 30  # Espacio extra entre opciones
 
     # 4. Guardar imagen
+    OUTPUT_DIR = "static"
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     if not os.path.dirname(output_path):
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
         final_path = os.path.join(OUTPUT_DIR, output_path)
+        nombre_archivo = output_path
     else:
         # Si ya trae carpeta, nos aseguramos de que esa carpeta exista
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         final_path = output_path
+        nombre_archivo = os.path.basename(output_path)
 
     base_image.convert("RGB").save(final_path, "JPEG", quality=75, optimize=True)
-
-    print(f"🖼️ Imagen generada: {output_path}")
-    return output_path
+    
+    print(f"🖼️ Imagen generada: {final_path}")
+    return nombre_archivo
 
 
 # --- EJEMPLO DE PRUEBA LOCAL ---
 if __name__ == "__main__":
-    # Datos de prueba como los que vendrían de GPT
+# Datos de prueba como los que vendrían de GPT
+"""
     ejemplo_gpt = {
         "pregunta": "¿Cuál es la función principal de las mitocondrias en la célula animal según el texto estudiado?",
         "opciones": {
@@ -129,3 +132,4 @@ if __name__ == "__main__":
         "correcta": "B",
     }
     create_quiz_image(ejemplo_gpt, "prueba_local.jpg")
+"""
