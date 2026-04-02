@@ -6,7 +6,7 @@ import os
 IMG_SIZE = (1080, 1080)  # Formato cuadrado Instagram
 FONT_PATH = "assets/fonts/Montserrat-SemiBold.ttf"  # ¡Ruta a tu fuente .ttf!
 BG_IMAGE_PATH = "assets/images/fondo_quiz.png"  # ¡Ruta a tu fondo!
-OUTPUT_DIR = "static/generated"
+
 
 # Colores (RGB)
 COLOR_TITULO = (255, 255, 255)  # Blanco
