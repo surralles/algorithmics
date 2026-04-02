@@ -32,10 +32,6 @@ INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN_")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
-# Carpeta para las imágenes (Render la servirá por /static/generated/...)
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-GENERATED_DIR = os.path.join("static", "generated")
-os.makedirs(GENERATED_DIR, exist_ok=True)
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
