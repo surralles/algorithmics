@@ -117,7 +117,7 @@ def create_quiz_image(quiz_data, output_path):
     print(f"🖼️ Imagen generada: {final_path}")
     return nombre_archivo
 
-
+"""
 # --- EJEMPLO DE PRUEBA LOCAL ---
 if __name__ == "__main__":
 # Datos de prueba como los que vendrían de GPT
