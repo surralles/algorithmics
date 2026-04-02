@@ -117,19 +117,4 @@ def create_quiz_image(quiz_data, output_path):
     print(f"🖼️ Imagen generada: {final_path}")
     return nombre_archivo
 
-"""
-# --- EJEMPLO DE PRUEBA LOCAL ---
-if __name__ == "__main__":
-# Datos de prueba como los que vendrían de GPT
-"""
-    ejemplo_gpt = {
-        "pregunta": "¿Cuál es la función principal de las mitocondrias en la célula animal según el texto estudiado?",
-        "opciones": {
-            "A": "Realizar la fotosíntesis para generar energía.",
-            "B": "Producir energía a través de la respiración celular.",
-            "C": "Almacenar la información genética del organismo.",
-        },
-        "correcta": "B",
-    }
-    create_quiz_image(ejemplo_gpt, "prueba_local.jpg")
-"""
+
