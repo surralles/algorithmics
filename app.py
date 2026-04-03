@@ -200,6 +200,8 @@ def process_daily_pdf():
         base_url = os.getenv("RENDER_EXTERNAL_URL")
         public_url = f"{base_url}/static/{img_filename}"
 
+        url_prueba = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg"
+        
         print(f"🌍 URL enviada a Instagram: {public_url}")
 
         # 5. Publicar en Instagram
@@ -208,10 +210,10 @@ def process_daily_pdf():
             f"🧠 ¡Desafío de hoy!\n\n{quiz_data['pregunta']}\n\n👇 Comenta A, B o C."
         )
         result = logic_publish_to_instagram(public_url, caption)
-
+        
         return {
             "status": "Post publicado",
-            "image_url": public_url,
+            "image_url": url_prueba,
             "instagram_response": result,
         }, 200
 
