@@ -7,6 +7,7 @@ from utils.pdf_tools import extract_text_from_pdf
 import uuid  # Para generar nombres únicos de archivo
 from flask import url_for
 from flask import request, jsonify
+from flask import send_from_directory
 from image_generator import create_quiz_image
 
 
@@ -32,7 +33,11 @@ INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN_")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
-
+@app.route('/static/<path:filename>')
+def custom_static(filename):
+    # Esto fuerza a que el navegador (e Instagram) reconozcan que es una imagen JPEG
+    return send_from_directory('static', filename, mimetype='image/jpeg')
+    
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
    # Forzamos limpieza absoluta
@@ -53,8 +58,12 @@ def logic_publish_to_instagram(image_url, caption):
         "media_type": "IMAGE"  # <-- AÑADE ESTA LÍNEA para forzar el tipo
     }
     
-    r = requests.post(post_url, data=payload)
+    r = requests.post(post_url, json=payload)
     res_data = r.json()
+    
+    if "id" not in res_data:
+        return res_data # Devuelve el error para ver qué pasa
+    creation_id = res_data["id"]
     
     print(f"RESPONSE FROM META: {res_data}")
     print(f"--- DEBUG END ---")
@@ -63,16 +72,20 @@ def logic_publish_to_instagram(image_url, caption):
     if "error" in res_data:
         print(f"❌ Error de Meta: {res_data['error']['message']}")
         return res_data
-
-    container_id = res_data.get("id")
+    
+    container_id = res_data["id"]
+    
 
     # Paso 2: Publicar el contenedor
     publish_url = f"https://graph.facebook.com/v19.0/{INSTAGRAM_BUSINESS_ID}/media_publish"
-    r = requests.post(
-        publish_url,
-        data={"creation_id": container_id, "access_token": INSTAGRAM_ACCESS_TOKEN_},
-    )
-    return r.json()
+
+    publish_payload = {
+        "creation_id": creation_id,
+        "access_token": INSTAGRAM_ACCESS_TOKEN
+    }
+    final_res = requests.post(publish_url, json=publish_payload)
+    return final_res.json()
+    
 
 # 2. Esta es la RUTA (el endpoint que recibe el curl)
 @app.route('/publish_to_instagram', methods=['POST'])
@@ -196,7 +209,11 @@ def process_daily_pdf():
         )
         result = logic_publish_to_instagram(public_url, caption)
 
-        return result
+        return {
+            "status": "Post publicado",
+            "image_url": public_url,
+            "instagram_response": result,
+        }, 200
 
     except Exception as e:
         return {"error": str(e)}, 500
