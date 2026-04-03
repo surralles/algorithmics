@@ -81,7 +81,7 @@ def logic_publish_to_instagram(image_url, caption):
 
     publish_payload = {
         "creation_id": creation_id,
-        "access_token": INSTAGRAM_ACCESS_TOKEN
+        "access_token": INSTAGRAM_ACCESS_TOKEN_
     }
     final_res = requests.post(publish_url, json=publish_payload)
     return final_res.json()
