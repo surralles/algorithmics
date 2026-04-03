@@ -209,7 +209,7 @@ def process_daily_pdf():
         caption = (
             f"🧠 ¡Desafío de hoy!\n\n{quiz_data['pregunta']}\n\n👇 Comenta A, B o C."
         )
-        result = logic_publish_to_instagram(public_url, caption)
+        result = logic_publish_to_instagram(url_prueba, caption)
         
         return {
             "status": "Post publicado",
