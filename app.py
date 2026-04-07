@@ -114,7 +114,7 @@ def logic_publish_to_instagram(image_url, caption):
 
 # 2. Esta es la RUTA (el endpoint que recibe el curl)
 @app.route('/publish_to_instagram', methods=['POST'])
-def publish_to_instagram():
+def publish_to_instagram(image_url, caption):
     # Extraemos los datos del JSON que envías en el curl
     data = request.get_json()
     
