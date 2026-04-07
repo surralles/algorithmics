@@ -235,7 +235,7 @@ def process_daily_pdf():
             result = publish_to_instagram(public_url_segura, caption)
         else:
             result = {"error": "No se pudo subir la imagen a la nube"}
-        print(f"🌍 URL enviada a Instagram: {public_url_segural}")
+        print(f"🌍 URL enviada a Instagram: {public_url_segura}")
         return {
             "status": "Post publicado",
             "image_url": public_url_segura,
