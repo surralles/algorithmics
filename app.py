@@ -111,27 +111,7 @@ def logic_publish_to_instagram(image_url, caption):
     final_res = requests.post(publish_url, json=publish_payload)
     return final_res.json()
     
-
-# 2. Esta es la RUTA (el endpoint que recibe el curl)
-@app.route('/publish_to_instagram', methods=['POST'])
-def publish_to_instagram(image_url, caption):
-    # Extraemos los datos del JSON que envías en el curl
-    data = request.get_json()
-    
-    if not data or 'image_url' not in data:
-        return jsonify({"error": "Falta image_url en el JSON"}), 400
-        
-    img = data.get('image_url')
-    txt = data.get('caption', 'Post automático')
-
-    # Llamamos a la función lógica con los datos extraídos
-    resultado = logic_publish_to_instagram(img, txt)
-    
-    return jsonify(resultado)
-
-
 # --- LÓGICA DE IA ---
-
 
 def generate_quiz_data(text):
     """Genera la pregunta y la respuesta correcta usando GPT"""
@@ -235,7 +215,7 @@ def process_daily_pdf():
         if public_url_segura:
             # Publicamos con la URL de ImgBB
             caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
-            result = publish_to_instagram(public_url_segura, caption)
+            result = logic_publish_to_instagram(public_url_segura, caption)
         else:
             result = {"error": "No se pudo subir la imagen a la nube"}
         print(f"🌍 URL enviada a Instagram: {public_url_segura}")
