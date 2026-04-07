@@ -9,6 +9,7 @@ from flask import url_for
 from flask import request, jsonify
 from flask import send_from_directory
 from image_generator import create_quiz_image
+import base64
 
 
 load_dotenv()
@@ -37,7 +38,28 @@ DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 def custom_static(filename):
     # Esto fuerza a que el navegador (e Instagram) reconozcan que es una imagen JPEG
     return send_from_directory('static', filename, mimetype='image/jpeg')
+
+def upload_to_imgbb(image_path):
+    """Sube la imagen de Render a ImgBB para obtener una URL pública estable"""
+    api_key = "IMGBB_API_KEY" # Pon aquí tu clave real
     
+    
+    with open(image_path, "rb") as file:
+        payload = {
+            "key": api_key,
+            "image": base64.b64encode(file.read()),
+        }
+        res = requests.post("https://api.imgbb.com/1/upload", data=payload)
+        
+        if res.status_code == 200:
+            url_publica = res.json()["data"]["url"]
+            print(f"✅ Imagen subida a ImgBB: {url_publica}")
+            return url_publica
+        else:
+            print(f"❌ Error subiendo a ImgBB: {res.text}")
+            return None
+
+
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
    # Forzamos limpieza absoluta
@@ -197,23 +219,26 @@ def process_daily_pdf():
 
         # 4. Construir URL PÚBLICA para Instagram
         # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
-        base_url = os.getenv("RENDER_EXTERNAL_URL")
-        public_url = f"{base_url}/static/{img_filename}"
+        public_url_segura = upload_to_imgbb(local_img_path)
+        # base_url = os.getenv("RENDER_EXTERNAL_URL")
+        # public_url = f"{base_url}/static/{img_filename}"
 
-        url_prueba = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg"
+        # url_prueba = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg"
         
-        print(f"🌍 URL enviada a Instagram: {public_url}")
+        
 
         # 5. Publicar en Instagram
 
-        caption = (
-            f"🧠 ¡Desafío de hoy!\n\n{quiz_data['pregunta']}\n\n👇 Comenta A, B o C."
-        )
-        result = logic_publish_to_instagram(url_prueba, caption)
-        
+        if public_url_segura:
+            # Publicamos con la URL de ImgBB
+            caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
+            result = publish_to_instagram(public_url_segura, caption)
+        else:
+            result = {"error": "No se pudo subir la imagen a la nube"}
+        print(f"🌍 URL enviada a Instagram: {public_url_segural}")
         return {
             "status": "Post publicado",
-            "image_url": url_prueba,
+            "image_url": public_url_segura,
             "instagram_response": result,
         }, 200
 
