@@ -216,9 +216,10 @@ def process_daily_pdf():
             # Publicamos con la URL de ImgBB
             caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
             result = logic_publish_to_instagram(public_url_segura, caption)
-            if os.path.exists(local_img_path):
-                os.remove(local_img_path)
-                print(f"🗑️ Archivo temporal {local_img_path} eliminado con éxito.")
+            if "id" in result: 
+                if os.path.exists(local_img_path):
+                    os.remove(local_img_path)
+                    print(f"🗑️ Archivo temporal {local_img_path} eliminado con éxito.")
         else:
             result = {"error": "No se pudo subir la imagen a la nube"}
         print(f"🌍 URL enviada a Instagram: {public_url_segura}")
