@@ -41,7 +41,10 @@ def custom_static(filename):
 
 def upload_to_imgbb(image_path):
     """Sube la imagen de Render a ImgBB para obtener una URL pública estable"""
-    api_key = "IMGBB_API_KEY" # Pon aquí tu clave real
+    api_key = os.getenv("IMGBB_API_KEY")
+    if not api_key:
+        print("❌ ERROR: No se encontró la variable IMGBB_API_KEY en Render")
+        return None
     
     
     with open(image_path, "rb") as file:
