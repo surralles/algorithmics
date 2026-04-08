@@ -38,10 +38,18 @@ def create_quiz_image(quiz_data, output_path):
     # Tienes que tener estas fuentes descargadas en una carpeta 'fonts'
     # Montserrat para títulos, JetBrainsMono para código.
     font_folder = os.path.join(os.path.dirname(__file__), 'static', 'fonts')
-    title_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Bold.ttf"), 60)
-    tech_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 45)
-    code_font = ImageFont.truetype(os.path.join(font_folder, "JetBrainsMono-Medium.ttf"), 40)
-    brand_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 35)
+    print(f"Buscando fuentes en: {font_folder}")
+
+    try:
+        title_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Bold.ttf"), 60)
+        print("✅ Fuente Título cargada")
+        code_font = ImageFont.truetype(os.path.join(font_folder, "JetBrainsMono-Medium.ttf"), 40)
+        print("✅ Fuente Código cargada")
+    except OSError as e:
+        print(f"❌ ERROR DE FUENTE: {e}")
+        # Plan B: Cargar la fuente por defecto del sistema para que no se detenga el programa
+        title_font = ImageFont.load_default()
+        code_font = ImageFont.load_default()
 
     # 3. TEXTO SUPERIOR (FUERA DE LA CAJA)
     title_text = f"Modulo: {quiz_data['nombre_modulo']}"
