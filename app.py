@@ -114,8 +114,19 @@ def logic_publish_to_instagram(image_url, caption):
 # --- LÓGICA DE IA ---
 
 def generate_quiz_data(text):
-    """Genera la pregunta y la respuesta correcta usando GPT"""
-    prompt = f"Basado en este texto: {text}. Genera 1 pregunta de test con 3 opciones (A, B, C). Responde SOLO en JSON: {{'pregunta': '...', 'opciones': {{'A': '...', 'B': '...', 'C': '...'}}, 'correcta': 'A'}}"
+    prompt = """
+    Genera un quiz técnico en formato JSON con la siguiente estructura:
+    {
+      "nombre_modulo": "Nombre del tema (ej: Estructuras de Datos)",
+      "tecnologia": "Lenguaje (ej: Python)",
+      "codigo": "El bloque de código para el desafío",
+      "pregunta": "¿Qué imprimirá este código?",
+      "respuesta_a": "opción A",
+      "respuesta_b": "opción B",
+      "respuesta_c": "opción C",
+      "respuesta_correcta": "A, B o C"
+    }
+    """
 
     response = client.chat.completions.create(
         model="gpt-4o",  # O el que prefieras
