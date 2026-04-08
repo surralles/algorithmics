@@ -232,11 +232,11 @@ def process_daily_pdf():
         quiz_data = generate_quiz_data(text)
 
         # 3. Pillow genera la imagen en la carpeta static
-        '''img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
+        img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
         GENERATED_DIR = "static"
         os.makedirs(GENERATED_DIR, exist_ok=True)
-        local_img_path = os.path.join(GENERATED_DIR, img_filename)'''
-        local_img_path = os.path.join("static", "quiz_post.jpg")
+        '''local_img_path = os.path.join(GENERATED_DIR, img_filename)'''
+        local_img_path = os.path.join("static", img_filename)
         create_quiz_image(quiz_data, local_img_path)
 
         # 4. Construir URL PÚBLICA para Instagram
