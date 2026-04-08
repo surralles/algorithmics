@@ -43,12 +43,14 @@ def create_quiz_image(quiz_data, output_path):
     try:
         title_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Bold.ttf"), 60)
         print("✅ Fuente Título cargada")
+        tech_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 45)
         code_font = ImageFont.truetype(os.path.join(font_folder, "JetBrainsMono-Medium.ttf"), 40)
+        brand_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 35)
         print("✅ Fuente Código cargada")
     except OSError as e:
         print(f"❌ ERROR DE FUENTE: {e}")
         # Plan B: Cargar la fuente por defecto del sistema para que no se detenga el programa
-        title_font = ImageFont.load_default()
+        title_font = tech_font = brand_font = ImageFont.load_default()
         code_font = ImageFont.load_default()
 
     # 3. TEXTO SUPERIOR (FUERA DE LA CAJA)
@@ -58,6 +60,17 @@ def create_quiz_image(quiz_data, output_path):
     # 4. HEADER DE LA CAJA (Logo Tech + Nombre Tech)
     tech_name = quiz_data.get('tecnologia', 'Python').strip() # OpenAI debería darnos la tecnología
     logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logos', f"{tech_name.lower()}_logo.png")
+
+    # Así el código no explota si OpenAI olvida mandar la tecnología
+    tech_text = quiz_data.get('tecnologia', 'Coding').strip()
+
+    draw.text(
+        (box_x + 50 + logo_size + 20, box_y + 40 + (logo_size // 2)), 
+        tech_text, 
+        fill=TEXT_MAIN, 
+        font=tech_font, 
+        anchor="lm"
+    )
     
     print(f"DEBUG: Buscando logo en esta ruta exacta: '{logo_path}'")
 
