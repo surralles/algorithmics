@@ -52,7 +52,7 @@ def create_quiz_image(quiz_data, output_path):
         code_font = ImageFont.load_default()
 
     # 3. TEXTO SUPERIOR (FUERA DE LA CAJA)
-    title_text = f"Modulo: {quiz_data['nombre_modulo']}"
+    title_text = f"Módulo: {quiz_data.get('nombre_modulo', 'Algoritmos')}"
     draw.text((IMG_W // 2, 200), title_text, fill=TEXT_MAIN, font=title_font, anchor="ms")
 
     # 4. HEADER DE LA CAJA (Logo Tech + Nombre Tech)
