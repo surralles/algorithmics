@@ -48,8 +48,7 @@ def custom_static(filename):
     # Esto fuerza a que el navegador (e Instagram) reconozcan que es una imagen JPEG
     return send_from_directory('static', filename, mimetype='image/jpeg')
 
-
-'''def upload_to_imgbb(image_path):
+def upload_to_imgbb(image_path):
     """Sube la imagen de Render a ImgBB para obtener una URL pública estable"""
     api_key = os.getenv("IMGBB_API_KEY")
     if not api_key:
@@ -65,7 +64,8 @@ def custom_static(filename):
         res = requests.post("https://api.imgbb.com/1/upload", data=payload)
         
         if res.status_code == 200:
-            url_publica = res.json()["data"]["url"]
+            json_data = res.json()
+            url_publica = json_data["data"]["url"]
             print(f"✅ Imagen subida a ImgBB: {url_publica}")
             return url_publica
         else:
@@ -82,6 +82,8 @@ def upload_to_cloudinary(image_path):
     except Exception as e:
         print(f"❌ Error subiendo a Cloudinary: {e}")
         return None
+
+'''
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
