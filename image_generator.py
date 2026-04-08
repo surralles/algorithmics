@@ -1,120 +1,94 @@
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
 
-# --- CONFIGURACIÓN ---
-IMG_SIZE = (1080, 1080)  # Formato cuadrado Instagram
-FONT_PATH = "assets/fonts/Montserrat-SemiBold.ttf"  # ¡Ruta a tu fuente .ttf!
-BG_IMAGE_PATH = "assets/images/fondo_quiz.png"  # ¡Ruta a tu fondo!
-
-
-# Colores (RGB)
-COLOR_TITULO = (255, 255, 255)  # Blanco
-COLOR_PREGUNTA = (255, 255, 255)
-COLOR_OPCIONES = (230, 230, 230)  # Gris claro
-
-
-def draw_multiline_text(draw, text, position, font, max_width, color):
-    """
-    Función auxiliar para dibujar texto que salta de línea automáticamente.
-    Devuelve la coordenada Y donde terminó de dibujar.
-    """
-    x, y = position
-    # Calcula altura aproximada de la línea basado en la fuente
-    # bbox devuelve (left, top, right, bottom)
-    line_height = font.getbbox("hg")[3] - font.getbbox("hg")[1] + 15
-
-    # textwrap divide el texto en una lista de líneas
-    lines = textwrap.wrap(text, width=max_width)
-
-    for line in lines:
-        draw.text((x, y), line, font=font, fill=color)
-        y += line_height
-
-    return y  # Devuelve la nueva posición Y
-
-
 def create_quiz_image(quiz_data, output_path):
-    """
-    Recibe los datos del quiz (JSON de GPT) y genera una imagen cuadrada.
-    Devuelve la ruta local del archivo generado.
-    """
+    # --- CONFIGURACIÓN DE COLORES Y ESTILO ---
+    BG_COLOR = (10, 15, 25) # Azul casi negro
+    BOX_COLOR = (25, 30, 45) # Caja de código un poco más clara
+    TEXT_MAIN = (240, 240, 240) # Texto título
+    TEXT_CODE = (160, 210, 255) # Texto de código por defecto (azul claro)
+    # Sintaxis de código
+    COLOR_KEYWORD = (235, 110, 180) # Rosa/Violeta para 'def', 'for'
+    COLOR_STRING = (255, 180, 100) # Naranja claro para texto "ejemplo"
+    COLOR_OPT_A = (120, 240, 160) # Verde para la opción A
+    COLOR_OPT_B = (255, 230, 130) # Amarillo para la opción B
+    COLOR_OPT_C = (255, 120, 120) # Rojo para la opción C
 
-    # 1. Crear lienzo base (Cargar fondo o color sólido)
-    try:
-        base_image = Image.open(BG_IMAGE_PATH).resize(IMG_SIZE)
-        # Oscurecer un poco el fondo para que se lea el texto
-        overlay = Image.new("RGBA", IMG_SIZE, (0, 0, 0, 100))
-        base_image = Image.alpha_composite(base_image.convert("RGBA"), overlay)
-    except Exception as e:
-        print(f"⚠️ Usando color sólido: {e}")
-        base_image = Image.new("RGB", IMG_SIZE, color=(50, 50, 100))
+    # --- TAMAÑOS ---
+    IMG_W, IMG_H = 1080, 1920 # Formato Reel Vertical
+    BOX_W, BOX_H = 900, 1000 # Caja central
+    CORNER_RADIUS = 30
+    logo_size = 80 # Tamaño de los logos de tecnología
+    ig_icon_size = 40 # Tamaño del icono de Instagram
 
-    draw = ImageDraw.Draw(base_image)
+    # 1. CREAR EL FONDO CON UN GRADIENTE SUTIL (efecto profundidad)
+    # Para simplicidad, usaremos un color sólido para empezar, pero el estilo será el mismo.
+    img = Image.new('RGB', (IMG_W, IMG_H), BG_COLOR)
+    draw = ImageDraw.Draw(img)
 
-    # 2. Cargar Fuentes (Tamaños diferentes)
-    try:
-        # Ajusta los tamaños según tu fuente
-        font_titulo = ImageFont.truetype(FONT_PATH, size=70)
-        font_pregunta = ImageFont.truetype(FONT_PATH, size=55)
-        font_opciones = ImageFont.truetype(FONT_PATH, size=45)
-    except IOError:
-        print("❌ ERROR: No se encontró la fuente TTF. Usando default (feo).")
-        font_titulo = font_pregunta = font_opciones = ImageFont.load_default()
-
-    # --- DIBUJAR ELEMENTOS ---
-
-    current_y = 100  # Margen superior inicial
-    margin_x = 80  # Margen lateral
-
-    # A) Título
-    draw.text(
-        (margin_x, current_y), "🧠 Desafío Diario", font=font_titulo, fill=COLOR_TITULO
-    )
-    current_y += 150  # Espacio después del título
-
-    # B) Pregunta (con salto de línea)
-    # El width en textwrap es caracteres aproximados, ajústalo según tu fuente
-    current_y = draw_multiline_text(
-        draw,
-        quiz_data["pregunta"],
-        (margin_x, current_y),
-        font_pregunta,
-        max_width=35,
-        color=COLOR_PREGUNTA,
-    )
-
-    current_y += 80  # Espacio entre pregunta y opciones
-
-    # C) Opciones
-    opciones = quiz_data["opciones"]
-    for letra in ["A", "B", "C"]:
-        texto_opcion = f"{letra}) {opciones[letra]}"
-        # Dibujamos cada opción
-        current_y = draw_multiline_text(
-            draw,
-            texto_opcion,
-            (margin_x, current_y),
-            font_opciones,
-            max_width=40,
-            color=COLOR_OPCIONES,
-        )
-        current_y += 30  # Espacio extra entre opciones
-
-    # 4. Guardar imagen
-    OUTPUT_DIR = "static"
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    if not os.path.dirname(output_path):
-        final_path = os.path.join(OUTPUT_DIR, output_path)
-        nombre_archivo = output_path
-    else:
-        # Si ya trae carpeta, nos aseguramos de que esa carpeta exista
-        final_path = output_path
-        nombre_archivo = os.path.basename(output_path)
-
-    base_image.convert("RGB").save(final_path, "JPEG", quality=75, optimize=True)
+    # 2. DIBUJAR LA CAJA CENTRAL CON BORDES REDONDEADOS Y BRILLO
+    box_x = (IMG_W - BOX_W) // 2
+    box_y = 400 # Dejamos espacio arriba para el título
     
-    print(f"🖼️ Imagen generada: {final_path}")
-    return nombre_archivo
+    # Dibujamos la caja central con Pillow
+    draw.rounded_rectangle([box_x, box_y, box_x + BOX_W, box_y + BOX_H], 
+                          radius=CORNER_RADIUS, fill=BOX_COLOR)
+    
+    # --- CARGAR FUENTES (Necesitas los archivos .ttf) ---
+    # Tienes que tener estas fuentes descargadas en una carpeta 'fonts'
+    # Montserrat para títulos, JetBrainsMono para código.
+    font_folder = os.path.join(os.path.dirname(__file__), 'static', 'fonts')
+    title_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Bold.ttf"), 60)
+    tech_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 45)
+    code_font = ImageFont.truetype(os.path.join(font_folder, "JetBrainsMono-Medium.ttf"), 40)
+    brand_font = ImageFont.truetype(os.path.join(font_folder, "Montserrat-Regular.ttf"), 35)
 
+    # 3. TEXTO SUPERIOR (FUERA DE LA CAJA)
+    title_text = f"Modulo: {quiz_data['nombre_modulo']}"
+    draw.text((IMG_W // 2, 200), title_text, fill=TEXT_MAIN, font=title_font, anchor="ms")
 
+    # 4. HEADER DE LA CAJA (Logo Tech + Nombre Tech)
+    tech_name = quiz_data.get('tecnologia', 'Python') # OpenAI debería darnos la tecnología
+    logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logos', f"{tech_name.lower()}_logo.png")
+    
+    if os.path.exists(logo_path):
+        tech_logo = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size))
+        # Pegamos el logo con transparencia
+        img.paste(tech_logo, (box_x + 50, box_y + 40), tech_logo)
+        # Nombre de la tecnología al lado del logo
+        draw.text((box_x + 50 + logo_size + 20, box_y + 40 + (logo_size // 2)), tech_name, fill=TEXT_MAIN, font=tech_font, anchor="lm")
+
+    # 5. EL CÓDIGO (CON RESALTADO DE SINTAXIS SIMPLE)
+    # OpenAI nos dará el código como una cadena. Usamos sintaxis básica.
+    code_text = quiz_data['codigo']
+    code_start_y = box_y + 180
+    
+    draw.text((box_x + 50, code_start_y), code_text, fill=TEXT_CODE, font=code_font)
+    
+    # --- PRO-TIP: Resaltado de Sintaxis Dinámico ---
+    # Esto es complejo. Para empezar, el texto será de un solo color.
+    # Pero el efecto 'caja de vidrio' ya le da el toque.
+    
+    # 6. LAS OPCIONES A, B, C (Abajo del código, fuera de la caja de código pero dentro de la central si quieres)
+    # Lo mejor es ponerlas separadas y con colores diferentes para incentivar a,b,c
+    opt_y = box_y + BOX_H - 250
+    # Usamos colores diferentes para que destaquen como botones
+    draw.text((box_x + 50, opt_y), f"A: {quiz_data['respuesta_a']}", fill=COLOR_OPT_A, font=code_font)
+    draw.text((box_x + 50, opt_y + 60), f"B: {quiz_data['respuesta_b']}", fill=COLOR_OPT_B, font=code_font)
+    draw.text((box_x + 50, opt_y + 120), f"C: {quiz_data['respuesta_c']}", fill=COLOR_OPT_C, font=code_font)
+
+    # 7. EL FOOTER: Instagram Icon + Username
+    ig_path = os.path.join(os.path.dirname(__file__), 'static', 'logos', 'ig_logo.png')
+    footer_text = "Instagram: @nextskillz_"
+    footer_y = IMG_H - 150 # Cerca del final del Reel
+    
+    if os.path.exists(ig_path):
+        ig_logo = Image.open(ig_path).convert("RGBA").resize((ig_icon_size, ig_icon_size))
+        # Pegamos el icono de IG
+        img.paste(ig_logo, (box_x + 50, footer_y), ig_logo)
+        # Nombre de usuario al lado del icono
+        draw.text((box_x + 50 + ig_icon_size + 15, footer_y + (ig_icon_size // 2)), footer_text, fill=TEXT_MAIN, font=brand_font, anchor="lm")
+
+    # 8. GUARDAR Y LISTO
+    img.save(output_path)
+    print(f"✅ Imagen de Reel Ultra-Estilizada creada: {output_path}")
