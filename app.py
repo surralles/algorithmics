@@ -36,12 +36,6 @@ INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN_")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
-cloudinary.config( 
-  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
-  api_key = os.getenv("CLOUDINARY_API_KEY"), 
-  api_secret = os.getenv("CLOUDINARY_API_SECRET"),
-  secure = True
-)
 
 @app.route('/static/<path:filename>')
 def custom_static(filename):
@@ -66,47 +60,33 @@ def upload_to_imgbb(image_path):
         res = requests.post(url, data=payload)
         
         if res.status_code == 200:
-            '''json_data = res.json()
+            json_data = res.json()
             url_publica = json_data["data"]["url"]
             print(f"✅ Imagen subida a ImgBB: {url_publica}")
-            return url_publica'''
-            print("✅ Imagen subida a ImgBB para registro.")
-            # Pero lo que devolvemos es el Base64 para enviárselo directamente a Meta
-            return image_data.decode('utf-8')
+            return url_publica
+            
         else:
             print(f"❌ Error subiendo a ImgBB: {res.text}")
             return None
-'''
-def upload_to_cloudinary(image_path):
-    """Sube la imagen a Cloudinary, garantizando una URL que Instagram acepte"""
-    try:
-        response = cloudinary.uploader.upload(image_path, folder="quiz_bot")
-        url_segura = response.get("secure_url")
-        print(f"✅ Imagen subida a Cloudinary: {url_segura}")
-        return url_segura
-    except Exception as e:
-        print(f"❌ Error subiendo a Cloudinary: {e}")
-        return None
 
-'''
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
    # Forzamos limpieza absoluta
-    clean_id = str(os.getenv("INSTAGRAM_BUSINESS_ID", "")).strip()
-    clean_token = str(os.getenv("INSTAGRAM_ACCESS_TOKEN_", "")).strip()
+    business_id = str(os.getenv("INSTAGRAM_BUSINESS_ID", "")).strip()
+    access_token = str(os.getenv("INSTAGRAM_ACCESS_TOKEN_", "")).strip()
     
     # IMPORTANTE: Mira esto en los logs de Render después de lanzar el curl
     print(f"--- DEBUG START ---")
-    print(f"URL: https://graph.facebook.com/v19.0/{clean_id}/media")
-    print(f"Token (primeros 10): {clean_token[:10]}...")
+    print(f"URL: https://graph.facebook.com/v19.0/{business_id}/media")
     
-    post_url = f"https://graph.facebook.com/v19.0/{clean_id}/media"
+    
+    post_url = f"https://graph.facebook.com/v19.0/{business_id}/media"
     
     payload = {
         "image_url": image_url,
         "caption": caption,
-        "access_token": clean_token,
+        "access_token": access_token,
         "media_type": "IMAGE"  # <-- AÑADE ESTA LÍNEA para forzar el tipo
     }
     
@@ -114,11 +94,9 @@ def logic_publish_to_instagram(image_url, caption):
     res_data = r.json()
     
     if "id" not in res_data:
+        print(f"❌ Error en Paso 1 (Contenedor): {res_data}")
         return res_data # Devuelve el error para ver qué pasa
     creation_id = res_data["id"]
-    
-    print(f"RESPONSE FROM META: {res_data}")
-    print(f"--- DEBUG END ---")
     
     # Si falla aquí, el log de Render nos dirá EXACTAMENTE qué respondió Meta
     if "error" in res_data:
@@ -129,13 +107,16 @@ def logic_publish_to_instagram(image_url, caption):
     
 
     # Paso 2: Publicar el contenedor
-    publish_url = f"https://graph.facebook.com/v19.0/{INSTAGRAM_BUSINESS_ID}/media_publish"
+    publish_url = f"https://graph.facebook.com/v19.0/{business_id}/media_publish"
 
     publish_payload = {
         "creation_id": creation_id,
-        "access_token": INSTAGRAM_ACCESS_TOKEN_
+        "access_token": access_token
     }
     final_res = requests.post(publish_url, json=publish_payload)
+    print(f"RESPONSE FROM META (Final): {final_res.json()}")
+    print(f"--- DEBUG END ---")
+    
     return final_res.json()
     
 # --- LÓGICA DE IA ---
@@ -157,15 +138,11 @@ def generate_quiz_data(text):
 
     response = client.chat.completions.create(
         model="gpt-4o",  # O el que prefieras
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "system", "content": "Eres un experto en programación."},
+                  {"role": "user", "content": f"{prompt}\n\nTexto del PDF: {text}"}],
         response_format={"type": "json_object"},
     )
     return json.loads(response.choices[0].message.content)
-
-
-@app.route("/")
-def hello_world():
-    return "<h1>Servidor Algorithmics Activo</h1><p>El bot está esperando PDFs...</p>"
 
 
 # --- ENDPOINT PRINCIPAL ---
@@ -187,14 +164,12 @@ def webhook():
             for entry in data.get("entry", []):
                 for change in entry.get("changes", []):
                     if change.get("field") == "comments":
-                        comment_data = change["value"]
-                        comment_text = comment_data.get("text", "").upper().strip()
-                        user_id = comment_data.get("from", {}).get("id")
-                        media_id = comment_data.get("media", {}).get("id")
+                        val = change["value"]
+                        process_answer(val.get("from", {}).get("id"), 
+                                       val.get("text", "").upper().strip(), 
+                                       val.get("media", {}).get("id"))
 
-                        # Aquí filtrarías si el comentario es "A", "B" o "C"
-                        # Y lo compararías con la respuesta correcta guardada en tu DB o Sheets
-                        process_answer(user_id, comment_text, media_id)
+                      
         except Exception as e:
             print(f"Error en webhook: {e}")
 
@@ -205,8 +180,7 @@ def process_answer(user_id, text, media_id):
     """Aquí manejas el ranking y validación de la respuesta"""
     if text in ["A", "B", "C"]:
         print(f"Usuario {user_id} respondió {text} en el post {media_id}")
-        # 1. Buscar respuesta correcta del post en tu DB
-        # 2. Si es correcta, sumar puntos en Google Sheets
+       
 
 
 # --- ENDPOINT PRINCIPAL ---
@@ -233,46 +207,44 @@ def process_daily_pdf():
 
         # 3. Pillow genera la imagen en la carpeta static
         img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
-        GENERATED_DIR = "static"
-        os.makedirs(GENERATED_DIR, exist_ok=True)
-        '''local_img_path = os.path.join(GENERATED_DIR, img_filename)'''
         local_img_path = os.path.join("static", img_filename)
+        os.makedirs("static", exist_ok=True)
+       
         create_quiz_image(quiz_data, local_img_path)
 
         # 4. Construir URL PÚBLICA para Instagram
-        # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
-        public_url_segura = upload_to_imgbb(local_img_path)
-        # base_url = os.getenv("RENDER_EXTERNAL_URL")
-        # public_url = f"{base_url}/static/{img_filename}"
-
-        # url_prueba = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg"
         
-        
-
+        public_url = upload_to_imgbb(local_img_path)
+    
         # 5. Publicar en Instagram
 
-        if public_url_segura:
-            # Publicamos con la URL de Cloudinary
-            caption = f"🚨 DESAFÍO ALGORITHMICS 🚨\n¿Cuál es la respuesta correcta? Comenta A, B, o C abajo 👇\n🔄 Comparte con tu amigo tech.\n#Algorithmics #AprendeACodear #NextSkillz"
-            # caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
-            result = logic_publish_to_instagram(public_url_segura, caption)
+        if public_url:
+            
+            caption = (f"🚨 DESAFÍO ALGORITHMICS 🚨\n\n"
+                       f"¿Cuál es la respuesta correcta para este reto de {quiz_data.get('tecnologia', 'Código')}?\n"
+                       f"Comenta A, B, o C abajo 👇\n\n"
+                       f"#Algorithmics #NextSkillz #AprendeACodear")
+            
+            result = logic_publish_to_instagram(public_url, caption)
             if "id" in result: 
                 if os.path.exists(local_img_path):
                     os.remove(local_img_path)
                     print(f"🗑️ Archivo temporal {local_img_path} eliminado con éxito.")
         else:
             result = {"error": "No se pudo subir la imagen a la nube"}
-        print(f"🌍 URL enviada a Instagram: {public_url_segura}")
+        
         return {
             "status": "Post publicado",
-            "image_url": public_url_segura,
+            "image_url": public_url,
             "instagram_response": result,
         }, 200
 
     except Exception as e:
         return {"error": str(e)}, 500
 
-    
+@app.route("/")
+def index():
+    return "<h1>Servidor Algorithmics Activo</h1>"    
 
 
 if __name__ == "__main__":
