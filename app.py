@@ -235,7 +235,7 @@ def process_daily_pdf():
 
         # 4. Construir URL PÚBLICA para Instagram
         # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
-        public_url_segura = upload_to_cloudinary(local_img_path)
+        public_url_segura = upload_to_imgbb(local_img_path)
         # base_url = os.getenv("RENDER_EXTERNAL_URL")
         # public_url = f"{base_url}/static/{img_filename}"
 
