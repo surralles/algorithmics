@@ -48,11 +48,19 @@ def create_quiz_image(quiz_data, output_path):
     draw.text((IMG_W // 2, 200), title_text, fill=TEXT_MAIN, font=title_font, anchor="ms")
 
     # 4. HEADER DE LA CAJA (Logo Tech + Nombre Tech)
-    tech_name = quiz_data.get('tecnologia', 'Python') # OpenAI debería darnos la tecnología
+    tech_name = quiz_data.get('tecnologia', 'Python').strip() # OpenAI debería darnos la tecnología
     logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logos', f"{tech_name.lower()}_logo.png")
     
-    if os.path.exists(logo_path):
+    print(f"DEBUG: Buscando logo en esta ruta exacta: '{logo_path}'")
+
+    # Comprobamos si el archivo existe ANTES de intentar abrirlo
+    if not os.path.exists(logo_path):
+        print(f"❌ ERROR: El archivo de logo NO EXISTE en: {logo_path}")
+        # Puedes decidir si saltar el logo o usar uno por defecto
+    else:
+        print(f"✅ Archivo de logo encontrado. Intentando abrir...")
         tech_logo = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size))
+        
         # Pegamos el logo con transparencia
         img.paste(tech_logo, (box_x + 50, box_y + 40), tech_logo)
         # Nombre de la tecnología al lado del logo
