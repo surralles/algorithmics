@@ -10,6 +10,8 @@ from flask import request, jsonify
 from flask import send_from_directory
 from image_generator import create_quiz_image
 import base64
+import cloudinary
+import cloudinary.uploader
 
 
 load_dotenv()
@@ -34,12 +36,20 @@ INSTAGRAM_ACCESS_TOKEN_ = os.getenv("INSTAGRAM_ACCESS_TOKEN_")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "mi_token_secreto_3892")
 DEBUG_DISCORD_WEBHOOK = os.getenv("DEBUG_DISCORD_WEBHOOK")
 
+cloudinary.config( 
+  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+  api_key = os.getenv("CLOUDINARY_API_KEY"), 
+  api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+  secure = True
+)
+
 @app.route('/static/<path:filename>')
 def custom_static(filename):
     # Esto fuerza a que el navegador (e Instagram) reconozcan que es una imagen JPEG
     return send_from_directory('static', filename, mimetype='image/jpeg')
 
-def upload_to_imgbb(image_path):
+
+'''def upload_to_imgbb(image_path):
     """Sube la imagen de Render a ImgBB para obtener una URL pública estable"""
     api_key = os.getenv("IMGBB_API_KEY")
     if not api_key:
@@ -61,7 +71,17 @@ def upload_to_imgbb(image_path):
         else:
             print(f"❌ Error subiendo a ImgBB: {res.text}")
             return None
-
+'''
+def upload_to_cloudinary(image_path):
+    """Sube la imagen a Cloudinary, garantizando una URL que Instagram acepte"""
+    try:
+        response = cloudinary.uploader.upload(image_path, folder="quiz_bot")
+        url_segura = response.get("secure_url")
+        print(f"✅ Imagen subida a Cloudinary: {url_segura}")
+        return url_segura
+    except Exception as e:
+        print(f"❌ Error subiendo a Cloudinary: {e}")
+        return None
 
 # 1. Esta es la función lógica
 def logic_publish_to_instagram(image_url, caption):
