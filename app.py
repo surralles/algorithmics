@@ -233,7 +233,7 @@ def process_daily_pdf():
 
         # 4. Construir URL PÚBLICA para Instagram
         # Render nos da automáticamente la URL base en la variable RENDER_EXTERNAL_URL
-        public_url_segura = upload_to_imgbb(local_img_path)
+        public_url_segura = upload_to_cloudinary(local_img_path)
         # base_url = os.getenv("RENDER_EXTERNAL_URL")
         # public_url = f"{base_url}/static/{img_filename}"
 
@@ -244,7 +244,7 @@ def process_daily_pdf():
         # 5. Publicar en Instagram
 
         if public_url_segura:
-            # Publicamos con la URL de ImgBB
+            # Publicamos con la URL de Cloudinary
             caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
             result = logic_publish_to_instagram(public_url_segura, caption)
             if "id" in result: 
