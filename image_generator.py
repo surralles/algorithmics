@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
 
 def create_quiz_image(quiz_data, output_path):
+    '''
     # --- CONFIGURACIÓN DE COLORES Y ESTILO ---
     BG_COLOR = (10, 15, 25) # Azul casi negro
     BOX_COLOR = (25, 30, 45) # Caja de código un poco más clara
@@ -121,3 +122,65 @@ def create_quiz_image(quiz_data, output_path):
     # 8. GUARDAR Y LISTO
     img.save(output_path)
     print(f"✅ Imagen de Reel Ultra-Estilizada creada: {output_path}")
+    '''
+    # --- CONFIGURACIÓN DE ESTILO ---
+    BG_COLOR = (10, 15, 25) # Azul casi negro (estilo código oscuro)
+    TEXT_MAIN = (240, 240, 240) # Texto principal (blanco roto)
+    TEXT_CODE = (160, 210, 255) # Texto de código por defecto (azul claro)
+    COLOR_KEYWORD = (235, 110, 180) # Rosa/Violeta para palabras clave
+    COLOR_STRING = (255, 180, 100) # Naranja claro para strings
+    COLOR_OPT_A = (120, 240, 160) # Verde para la opción A
+    COLOR_OPT_B = (255, 230, 130) # Amarillo para la opción B
+    COLOR_OPT_C = (255, 120, 120) # Rojo para la opción C
+
+    # --- TAMAÑO CUADRADO ---
+    IMG_SIZE = 1080 # Tamaño estándar para posts cuadrados
+
+    img = Image.new('RGB', (IMG_SIZE, IMG_SIZE), BG_COLOR)
+    draw = ImageDraw.Draw(img)
+
+    # --- CARGAR FUENTES (Usa fuentes preinstaladas en Linux para evitar 'cannot open resource') ---
+    try:
+        # En Render (Linux), CourierNew suele estar preinstalada para el código
+        code_font = ImageFont.truetype("CourierNew.ttf", 45)
+        # Y DejaVuSans para el texto normal
+        text_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 55)
+        brand_font = ImageFont.truetype("DejaVuSans.ttf", 35)
+    except OSError:
+        # Si fallan, cargamos la de serie (menos bonita, pero funcional)
+        print("⚠️ Fuentes personalizadas no encontradas, usando las por defecto.")
+        code_font = ImageFont.load_default()
+        text_font = ImageFont.load_default()
+        brand_font = ImageFont.load_default()
+
+    # --- DIBUJAR ELEMENTOS ---
+    
+    # 1. TÍTULO
+    title_text = "¿Cuál es la salida de este código?"
+    draw.text((IMG_SIZE // 2, 120), title_text, fill=TEXT_MAIN, font=text_font, anchor="ms")
+
+    # 2. EL CÓDIGO (Resaltado de Sintaxis Simple)
+    code_text = quiz_data.get('codigo', 'print("Prueba de Código")')
+    code_start_y = 250
+    # Dibujamos el código con el color por defecto
+    draw.text((100, code_start_y), code_text, fill=TEXT_CODE, font=code_font)
+    
+    # PRO-TIP: Resaltado de sintaxis súper básico (palabras clave 'def' y 'print')
+    keywords = ["def ", "print("]
+    # (Este resaltado es muy básico, lo ideal es una librería, pero para probar sirve)
+    # Por ahora, para evitar complejidades, lo dejaremos en un solo color.
+
+    # 3. LAS OPCIONES A, B, C
+    opt_y = 650
+    draw.text((100, opt_y), f"A: {quiz_data.get('respuesta_a', 'Opción A')}", fill=COLOR_OPT_A, font=code_font)
+    draw.text((100, opt_y + 80), f"B: {quiz_data.get('respuesta_b', 'Opción B')}", fill=COLOR_OPT_B, font=code_font)
+    draw.text((100, opt_y + 160), f"C: {quiz_data.get('respuesta_c', 'Opción C')}", fill=COLOR_OPT_C, font=code_font)
+
+    # 4. EL FOOTER: Marca de Agua
+    footer_text = "Instagram: @nextskillz_"
+    footer_y = IMG_SIZE - 100
+    draw.text((IMG_SIZE // 2, footer_y), footer_text, fill=TEXT_MAIN, font=brand_font, anchor="ms")
+
+    # 5. GUARDAR Y LISTO
+    img.save(output_path)
+    print(f"✅ Imagen de Post Cuadrado creada: {output_path}")
