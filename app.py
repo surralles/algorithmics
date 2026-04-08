@@ -54,20 +54,25 @@ def upload_to_imgbb(image_path):
     if not api_key:
         print("❌ ERROR: No se encontró la variable IMGBB_API_KEY en Render")
         return None
-    
+    url = "https://api.imgbb.com/1/upload"
     
     with open(image_path, "rb") as file:
+        # Convertimos la imagen a base64 (formato que pide ImgBB y Meta)
+        image_data = base64.b64encode(file.read())
         payload = {
             "key": api_key,
-            "image": base64.b64encode(file.read()),
+            "image": image_data,
         }
-        res = requests.post("https://api.imgbb.com/1/upload", data=payload)
+        res = requests.post(url, data=payload)
         
         if res.status_code == 200:
-            json_data = res.json()
+            '''json_data = res.json()
             url_publica = json_data["data"]["url"]
             print(f"✅ Imagen subida a ImgBB: {url_publica}")
-            return url_publica
+            return url_publica'''
+            print("✅ Imagen subida a ImgBB para registro.")
+            # Pero lo que devolvemos es el Base64 para enviárselo directamente a Meta
+            return image_data.decode('utf-8')
         else:
             print(f"❌ Error subiendo a ImgBB: {res.text}")
             return None
