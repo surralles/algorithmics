@@ -232,10 +232,11 @@ def process_daily_pdf():
         quiz_data = generate_quiz_data(text)
 
         # 3. Pillow genera la imagen en la carpeta static
-        img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
+        '''img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
         GENERATED_DIR = "static"
         os.makedirs(GENERATED_DIR, exist_ok=True)
-        local_img_path = os.path.join(GENERATED_DIR, img_filename)
+        local_img_path = os.path.join(GENERATED_DIR, img_filename)'''
+        local_img_path = os.path.join("static", "quiz_post.jpg")
         create_quiz_image(quiz_data, local_img_path)
 
         # 4. Construir URL PÚBLICA para Instagram
@@ -252,7 +253,8 @@ def process_daily_pdf():
 
         if public_url_segura:
             # Publicamos con la URL de Cloudinary
-            caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
+            caption = f"🚨 DESAFÍO ALGORITHMICS 🚨\n¿Cuál es la respuesta correcta? Comenta A, B, o C abajo 👇\n🔄 Comparte con tu amigo tech.\n#Algorithmics #AprendeACodear #NextSkillz"
+            # caption = f"🧠 Quiz Algorithmics: {quiz_data['pregunta']}"
             result = logic_publish_to_instagram(public_url_segura, caption)
             if "id" in result: 
                 if os.path.exists(local_img_path):
