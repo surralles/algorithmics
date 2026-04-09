@@ -42,7 +42,7 @@ def custom_static(filename):
     # Esto fuerza a que el navegador (e Instagram) reconozcan que es una imagen JPEG
     return send_from_directory('static', filename, mimetype='image/jpeg')
 
-def upload_to_imgbb(image_path):
+'''def upload_to_imgbb(image_path):
     """Sube la imagen de Render a ImgBB para obtener una URL pública estable"""
     api_key = os.getenv("IMGBB_API_KEY")
     if not api_key:
@@ -68,6 +68,7 @@ def upload_to_imgbb(image_path):
         else:
             print(f"❌ Error subiendo a ImgBB: {res.text}")
             return None
+'''
 
 
 # 1. Esta es la función lógica
@@ -206,18 +207,20 @@ def process_daily_pdf():
         quiz_data = generate_quiz_data(text)
 
         # 3. Pillow genera la imagen en la carpeta static
-        img_filename = f"quiz_{uuid.uuid4().hex[:8]}.jpg"
+        img_filename = "current_quiz_post.jpg"
         local_img_path = os.path.join("static", img_filename)
         os.makedirs("static", exist_ok=True)
        
         create_quiz_image(quiz_data, local_img_path)
 
         # 4. Construir URL PÚBLICA para Instagram
-        
-        public_url = upload_to_imgbb(local_img_path)
-    
+        base_url = os.getenv("RENDER_EXTERNAL_URL")
+        #public_url = upload_to_imgbb(local_img_path)
+        if not base_url:
+            return {"error": "Falta la variable de entorno RENDER_EXTERNAL_URL. Configúrala en Render."}, 500
         # 5. Publicar en Instagram
-
+        public_url = f"{base_url}/static/{img_filename}"
+        print(f"🌍 URL generada para Instagram: {public_url}")
         if public_url:
             
             caption = (f"🚨 DESAFÍO ALGORITHMICS 🚨\n\n"
