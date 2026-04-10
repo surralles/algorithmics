@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-def create_styled_square_image(quiz_data, output_path):
+def create_quiz_image(quiz_data, output_path):
     # --- CONFIGURACIÓN ---
     IMG_SIZE = 1080 
     BG_COLOR = (15, 20, 30) 
