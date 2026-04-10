@@ -1,3 +1,4 @@
+import time
 import os, json, sys, requests
 from flask import Flask, request
 from dotenv import load_dotenv
@@ -97,7 +98,7 @@ def logic_publish_to_instagram(image_url, caption):
     if "id" not in res_data:
         print(f"❌ Error en Paso 1 (Contenedor): {res_data}")
         return res_data # Devuelve el error para ver qué pasa
-    creation_id = res_data["id"]
+    id_del_post = res_data["id"]
     
     # Si falla aquí, el log de Render nos dirá EXACTAMENTE qué respondió Meta
     if "error" in res_data:
@@ -105,13 +106,15 @@ def logic_publish_to_instagram(image_url, caption):
         return res_data
     
     container_id = res_data["id"]
-    
+
+    print(f"⏳ Esperando 10 segundos a que Instagram procese {id_del_post}...")
+    time.sleep(12)
 
     # Paso 2: Publicar el contenedor
     publish_url = f"https://graph.facebook.com/v19.0/{business_id}/media_publish"
 
     publish_payload = {
-        "creation_id": creation_id,
+        "creation_id": id_del_post,
         "access_token": access_token
     }
     final_res = requests.post(publish_url, json=publish_payload)
