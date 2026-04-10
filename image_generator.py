@@ -41,13 +41,13 @@ def create_quiz_image(quiz_data, output_path):
     wt = bbox_t[2] - bbox_t[0]
     draw.text(((IMG_SIZE - wt) / 2, current_y), title_text, fill=TITLE_COLOR, font=title_font)
     
-    current_y += 120 # Espacio bajo el título
+    current_y += 140 # Espacio bajo el título
 
     # 2. BLOQUE DE CÓDIGO (Calculamos su altura real)
     code_text = quiz_data.get('codigo', '# Código no disponible')
     # Calculamos el bounding box para ver cuánto ocupa
     bbox_c = draw.textbbox((0, 0), code_text, font=code_font)
-    code_height = bbox_c[3] - bbox_c[ top ] # Altura total del código
+    code_height = bbox_c[3] - bbox_c[1] # Altura total del código
     
     print(f"DEBUG: Altura del código generada: {code_height}px")
     
@@ -56,12 +56,13 @@ def create_quiz_image(quiz_data, output_path):
 
     # 3. OPCIONES A, B, C (DINÁMICAS)
     # Colocamos las opciones 80px por DEBAJO del final real del código
-    current_y += code_height + 80
+    espacio_codigo = max(code_height, 200) 
+    current_y += espacio_codigo + 80
     
     draw.text((margin, current_y), f"A) {quiz_data.get('respuesta_a', '')}", fill=OPTIONS_COLOR, font=option_font)
-    current_y += 75
+    current_y += 85
     draw.text((margin, current_y), f"B) {quiz_data.get('respuesta_b', '')}", fill=OPTIONS_COLOR, font=option_font)
-    current_y += 75
+    current_y += 85
     draw.text((margin, current_y), f"C) {quiz_data.get('respuesta_c', '')}", fill=OPTIONS_COLOR, font=option_font)
 
     # 4. MARCA DE AGUA (Centrada abajo)
@@ -72,5 +73,5 @@ def create_quiz_image(quiz_data, output_path):
     draw.text(((IMG_SIZE - wf) / 2, IMG_SIZE - 150), footer_text, fill=TITLE_COLOR, font=title_font)
 
     # Guardar con alta calidad
-    img.save(output_path, format="JPEG", quality=90)
+    img.save(output_path, format="JPEG", quality=95)
     print(f"✅ Imagen profesional cuadrada creada y guardada en: {output_path}")
