@@ -48,6 +48,10 @@ def create_quiz_image(quiz_data, output_path):
 
     # 2. BLOQUE DE CÓDIGO (Calculamos su altura real)
     raw_code = quiz_data.get('codigo', '# Código no disponible')
+ 
+    # Si la IA nos mandó una lista, la unimos. Si mandó un string, lo dejamos igual.
+    if isinstance(raw_code, list):
+        raw_code = "\n".join(raw_code)
 
     # Dividimos el código en líneas y aplicamos wrap a cada una si es muy larga
     wrapped_lines = []
