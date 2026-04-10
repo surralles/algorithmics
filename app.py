@@ -127,7 +127,8 @@ def logic_publish_to_instagram(image_url, caption):
 
 def generate_quiz_data(text):
     prompt = """
-    Genera un quiz técnico en formato JSON con la siguiente estructura:
+    Genera un quiz técnico en formato JSON con la siguiente estructura. 
+    Además genera líneas de código de máximo 40 caracteres para que quepan bien en una imagen cuadrada:
     {
       "nombre_modulo": "Nombre del tema (ej: Estructuras de Datos)",
       "tecnologia": "Lenguaje (ej: Python)",
