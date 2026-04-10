@@ -8,6 +8,7 @@ def create_quiz_image(quiz_data, output_path):
     TITLE_COLOR = (0, 255, 150)   # Verde neón (Título y Marca)
     CODE_COLOR = (200, 220, 240)  # Blanco azulado para el código
     OPTIONS_COLOR = (240, 240, 240) # Blanco roto para opciones A,B,C
+ 
 
     img = Image.new('RGB', (IMG_SIZE, IMG_SIZE), BG_COLOR)
     draw = ImageDraw.Draw(img)
@@ -33,6 +34,8 @@ def create_quiz_image(quiz_data, output_path):
 
     # --- DIBUJAR ELEMENTOS CON CÁLCULO DE ESPACIO ---
     margin = 80
+    max_width_chars = 35
+    
     current_y = 100
 
     # 1. TÍTULO (Centrado)
@@ -44,25 +47,34 @@ def create_quiz_image(quiz_data, output_path):
     current_y += 140 # Espacio bajo el título
 
     # 2. BLOQUE DE CÓDIGO (Calculamos su altura real)
-    code_text = quiz_data.get('codigo', '# Código no disponible')
+    raw_code = quiz_data.get('codigo', '# Código no disponible')
+
+    # Dividimos el código en líneas y aplicamos wrap a cada una si es muy larga
+    wrapped_lines = []
+    for line in raw_code.split('\n'):
+        wrapped_lines.extend(textwrap.wrap(line, width=max_width_chars, replace_whitespace=False))
+    
+    code_text_wrapped = "\n".join(wrapped_lines)
+    
     # Calculamos el bounding box para ver cuánto ocupa
-    bbox_c = draw.textbbox((0, 0), code_text, font=code_font)
+    bbox_c = draw.textbbox((0, 0), code_text_wrapped, font=code_font)
     code_height = bbox_c[3] - bbox_c[1] # Altura total del código
     
     print(f"DEBUG: Altura del código generada: {code_height}px")
     
     # Dibujamos el código
-    draw.text((margin, current_y), code_text, fill=CODE_COLOR, font=code_font)
+    draw.text((margin, current_y), code_text_wrapped, fill=CODE_COLOR, font=code_font)
 
     # 3. OPCIONES A, B, C (DINÁMICAS)
     # Colocamos las opciones 80px por DEBAJO del final real del código
-    espacio_codigo = max(code_height, 200) 
-    current_y += espacio_codigo + 80
+    current_y += code_height + 100
+    # Si vemos que nos salimos de la imagen, bajamos un poco el gap
+    gap = 80 if current_y < 700 else 60
     
     draw.text((margin, current_y), f"A) {quiz_data.get('respuesta_a', '')}", fill=OPTIONS_COLOR, font=option_font)
-    current_y += 85
+    current_y += gap
     draw.text((margin, current_y), f"B) {quiz_data.get('respuesta_b', '')}", fill=OPTIONS_COLOR, font=option_font)
-    current_y += 85
+    current_y += gap
     draw.text((margin, current_y), f"C) {quiz_data.get('respuesta_c', '')}", fill=OPTIONS_COLOR, font=option_font)
 
     # 4. MARCA DE AGUA (Centrada abajo)
